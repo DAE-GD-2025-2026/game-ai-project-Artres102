@@ -19,15 +19,19 @@ SteeringOutput Seek::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 	{
 		FVector AgentPosition = FVector(Agent.GetPosition().X, Agent.GetPosition().Y, 0);
 		TargetDirection.Normalize();
-		FVector TargetPosition = AgentPosition + FVector(TargetDirection.X, TargetDirection.Y, 0) * 100.f;
+		FVector TargetLinePosition = AgentPosition + FVector(TargetDirection.X, TargetDirection.Y, 0) * 100.f;
+		FVector TargetPosition = FVector(Target.Position.X, Target.Position.Y, 0);
 		
 		// Draw the desired direction
-		DrawDebugLine(Agent.GetWorld(), AgentPosition, TargetPosition, FColor::Green, false, -1.f, 0, 3.f);
+		DrawDebugLine(Agent.GetWorld(), AgentPosition, TargetLinePosition, FColor::Green, false, -1.f, 0, 3.f);
 		FVector AgentVelocity = Agent.GetVelocity();
 		AgentVelocity.Normalize();
 		FVector CurrentDirection = AgentPosition + AgentVelocity * 100.f;
-		//Draw the current direction
+		// Draw the current direction
 		DrawDebugLine(Agent.GetWorld(), AgentPosition, CurrentDirection, FColor::Cyan, false, -1.f, 0, 3.f);
+
+		// Draw Target
+		DrawDebugPoint(Agent.GetWorld(), TargetPosition, 10.f, FColor::Red, false, -1.f);
 	}
 	
 	return Steering;
@@ -46,15 +50,19 @@ SteeringOutput Flee::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 	{
 		FVector AgentPosition = FVector(Agent.GetPosition().X, Agent.GetPosition().Y, 0);
 		TargetDirection.Normalize();
-		FVector TargetPosition = AgentPosition + FVector(TargetDirection.X, TargetDirection.Y, 0) * 100.f;
+		FVector TargetLinePosition = AgentPosition + FVector(TargetDirection.X, TargetDirection.Y, 0) * 100.f;
+		FVector TargetPosition = FVector(Target.Position.X, Target.Position.Y, 0);
 
 		// Draw the desired direction
-		DrawDebugLine(Agent.GetWorld(), AgentPosition, TargetPosition, FColor::Green, false, -1.f, 0, 3.f);
+		DrawDebugLine(Agent.GetWorld(), AgentPosition, TargetLinePosition, FColor::Green, false, -1.f, 0, 3.f);
 		FVector AgentVelocity = Agent.GetVelocity();
 		AgentVelocity.Normalize();
 		FVector CurrentDirection = AgentPosition + AgentVelocity * 100.f;
 		//Draw the current direction
 		DrawDebugLine(Agent.GetWorld(), AgentPosition, CurrentDirection, FColor::Cyan, false, -1.f, 0, 3.f);
+
+		// Draw Target
+		DrawDebugPoint(Agent.GetWorld(), TargetPosition, 10.f, FColor::Red, false, -1.f);
 	}
 	
 	return Steering;
@@ -89,16 +97,70 @@ SteeringOutput Arrive::CalculateSteering(float DeltaT, ASteeringAgent & Agent)
 		DrawDebugCircle(Agent.GetWorld(), AgentPosition, TargetRadius, 40.f, FColor::Red, false, -1.f, 0, 3.f, FVector(1,0,0), FVector(0,1,0));
 
 		TargetDirection.Normalize();
-		FVector TargetPosition = AgentPosition + FVector(TargetDirection.X, TargetDirection.Y, 0) * 100.f;
+		FVector TargetLinePosition = AgentPosition + FVector(TargetDirection.X, TargetDirection.Y, 0) * 100.f;
+		FVector TargetPosition = FVector(Target.Position.X, Target.Position.Y, 0);
 
 		// Draw the desired direction
-		DrawDebugLine(Agent.GetWorld(), AgentPosition, TargetPosition, FColor::Green, false, -1.f, 0, 3.f);
+		DrawDebugLine(Agent.GetWorld(), AgentPosition, TargetLinePosition, FColor::Green, false, -1.f, 0, 3.f);
 		FVector AgentVelocity = Agent.GetVelocity();
 		AgentVelocity.Normalize();
 		FVector CurrentDirection = AgentPosition + AgentVelocity * 100.f;
-		//Draw the current direction
+		// Draw the current direction
 		DrawDebugLine(Agent.GetWorld(), AgentPosition, CurrentDirection, FColor::Cyan, false, -1.f, 0, 3.f);
+
+		// Draw Target
+		DrawDebugPoint(Agent.GetWorld(), TargetPosition, 10.f, FColor::Red, false, -1.f);
 	}
 	
 	return Steering;
+}
+
+SteeringOutput Face::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
+{
+    SteeringOutput Steering{};
+
+    FVector2D TargetDirection = Target.Position - Agent.GetPosition();
+
+    if (TargetDirection.IsNearlyZero())
+    {
+        return Steering;
+    }
+
+    float TargetRotation = FMath::RadiansToDegrees(FMath::Atan2(TargetDirection.Y, TargetDirection.X));
+
+    float CurrentRotation = Agent.GetRotation(); 
+    float DeltaRotation = FMath::FindDeltaAngleDegrees(CurrentRotation, TargetRotation);
+    if (FMath::Abs(DeltaRotation) > 0.5f) 
+    {
+        float MaxAngularSpeed = Agent.GetMaxAngularSpeed();
+        Steering.AngularVelocity = DeltaRotation * 10.f; 
+        Steering.AngularVelocity = FMath::Clamp(Steering.AngularVelocity, -MaxAngularSpeed, MaxAngularSpeed);
+    }
+    else
+    {
+        Steering.AngularVelocity = 0.f;
+    }
+    Steering.LinearVelocity = FVector2D::ZeroVector;
+
+	// Debug Rendering
+	if (Agent.GetDebugRenderingEnabled())
+	{
+		FVector AgentPosition = FVector(Agent.GetPosition().X, Agent.GetPosition().Y, 0);
+		TargetDirection.Normalize();
+		FVector TargetLinePosition = AgentPosition + FVector(TargetDirection.X, TargetDirection.Y, 0) * 100.f;
+		FVector TargetPosition = FVector(Target.Position.X, Target.Position.Y, 0);
+
+		// Draw the desired direction
+		DrawDebugLine(Agent.GetWorld(), AgentPosition, TargetLinePosition, FColor::Green, false, -1.f, 0, 3.f);
+		FVector AgentVelocity = Agent.GetVelocity();
+		AgentVelocity.Normalize();
+		FVector CurrentDirection = AgentPosition + AgentVelocity * 100.f;
+		// Draw the current direction
+		DrawDebugLine(Agent.GetWorld(), AgentPosition, CurrentDirection, FColor::Cyan, false, -1.f, 0, 3.f);
+
+		// Draw Target
+		DrawDebugPoint(Agent.GetWorld(), TargetPosition, 10.f, FColor::Red, false, -1.f);
+	}
+    
+    return Steering;
 }

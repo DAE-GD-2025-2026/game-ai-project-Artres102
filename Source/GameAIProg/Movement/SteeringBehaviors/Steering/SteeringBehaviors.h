@@ -57,3 +57,12 @@ class Arrive : public ISteeringBehavior
 private:
 	float OriginalSpeed = -1;
 };
+
+class Face : public ISteeringBehavior
+{
+	public:
+	Face() = default;
+	virtual ~Face() override = default;
+
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
+};
