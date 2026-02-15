@@ -196,7 +196,8 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 		FVector CurrentDirection = AgentPosition + AgentVelocity * 100.f;
 		// Draw the current direction
 		DrawDebugLine(Agent.GetWorld(), AgentPosition, CurrentDirection, FColor::Cyan, false, -1.f, 0, 3.f);
-		
+
+		// Draw the Target
 		DrawDebugPoint(Agent.GetWorld(), TargetPosition, 10.f, FColor::Red, false, -1.f);
 	}
 	
@@ -234,7 +235,8 @@ SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 		FVector CurrentDirection = AgentPosition + AgentVelocity * 100.f;
 		// Draw the current direction
 		DrawDebugLine(Agent.GetWorld(), AgentPosition, CurrentDirection, FColor::Cyan, false, -1.f, 0, 3.f);
-		
+
+		// Draw the Target
 		DrawDebugPoint(Agent.GetWorld(), TargetPosition, 10.f, FColor::Red, false, -1.f);
 	}
 	
@@ -243,59 +245,34 @@ SteeringOutput Evade::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 
 SteeringOutput Wander::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 {
-    SteeringOutput Steering{};
+    float AgentRotationRadians = FMath::DegreesToRadians(Agent.GetRotation());
+    FVector2D ForwardDirection = FVector2D(FMath::Cos(AgentRotationRadians),FMath::Sin(AgentRotationRadians));
+    FVector2D CircleCenter = Agent.GetPosition() + ForwardDirection * m_OffsetDistance;
     
-    float CurrentRotation = Agent.GetRotation();
-    FVector2D ForwardDirection = FVector2D(
-        FMath::Cos(FMath::DegreesToRadians(CurrentRotation)),
-        FMath::Sin(FMath::DegreesToRadians(CurrentRotation))
-    );
+    float RandomAngle = FMath::RandRange(-m_MaxAngleChange, m_MaxAngleChange);
+    m_WanderAngle += RandomAngle;
+    m_WanderAngle = FMath::Fmod(m_WanderAngle, 2 * PI);
     
-    FVector2D CircleCenter = Agent.GetPosition() + ForwardDirection * WanderDistance;
+    FVector2D TargetOffset = FVector2D(FMath::Cos(m_WanderAngle) * m_Radius,FMath::Sin(m_WanderAngle) * m_Radius);
+    Target.Position = CircleCenter + TargetOffset;
     
-    float RandomAngleOffset = FMath::RandRange(-WanderJitter, WanderJitter);
-    WanderAngle += RandomAngleOffset;
-    
-    WanderAngle = FMath::Fmod(WanderAngle, 360.f);
-    
-    float AngleInRadians = FMath::DegreesToRadians(WanderAngle);
-    FVector2D CircleOffset = FVector2D(
-        FMath::Cos(AngleInRadians) * WanderRadius,
-        FMath::Sin(AngleInRadians) * WanderRadius
-    );
-	
-    FVector2D WanderTarget = CircleCenter + CircleOffset;
-    
-    FVector2D DirectionToTarget = WanderTarget - Agent.GetPosition();
-    float DistanceToTarget = DirectionToTarget.Size();
-    
-    if (DistanceToTarget > 0.1f)
-    {
-        DirectionToTarget.Normalize();
-        Steering.LinearVelocity = DirectionToTarget * Agent.GetMaxLinearSpeed();
-    }
+    SteeringOutput Steering = Seek::CalculateSteering(DeltaT, Agent);
     
     // Debug Rendering
     if (Agent.GetDebugRenderingEnabled())
     {
         FVector AgentPosition = FVector(Agent.GetPosition().X, Agent.GetPosition().Y, 0);
         FVector CircleCenter3D = FVector(CircleCenter.X, CircleCenter.Y, 0);
-        FVector WanderTarget3D = FVector(WanderTarget.X, WanderTarget.Y, 0);
+        FVector TargetPosition3D = FVector(Target.Position.X, Target.Position.Y, 0);
         
         // Draw the wander circle
-        DrawDebugCircle(Agent.GetWorld(), CircleCenter3D, WanderRadius, 32, FColor::Blue, false, -1.f, 0, 2.f, FVector(1,0,0), FVector(0,1,0));
-        
-        // Draw line from agent to circle center
-        DrawDebugLine(Agent.GetWorld(), AgentPosition, CircleCenter3D, FColor::Orange, false, -1.f, 0, 2.f);
-        
-        // Draw line from circle center to wander target
-        DrawDebugLine(Agent.GetWorld(), CircleCenter3D, WanderTarget3D, FColor::Purple, false, -1.f, 0, 3.f);
+        DrawDebugCircle(Agent.GetWorld(), CircleCenter3D, m_Radius, 40, FColor::Blue, false, -1.f, 0, 2.f, FVector(1,0,0), FVector(0,1,0));
         
         // Draw the wander target point
-        DrawDebugPoint(Agent.GetWorld(), WanderTarget3D, 10.f, FColor::Magenta, false, -1.f);
+        DrawDebugPoint(Agent.GetWorld(), TargetPosition3D, 10.f, FColor::Red, false, -1.f);
         
         // Draw the current direction
-        FVector ForwardLine = AgentPosition + FVector(ForwardDirection.X, ForwardDirection.Y, 0) * (WanderDistance + WanderRadius);
+        FVector ForwardLine = AgentPosition + FVector(ForwardDirection.X, ForwardDirection.Y, 0) * (m_OffsetDistance + m_Radius);
         DrawDebugLine(Agent.GetWorld(), AgentPosition, ForwardLine, FColor::Cyan, false, -1.f, 0, 1.f);
     }
     
