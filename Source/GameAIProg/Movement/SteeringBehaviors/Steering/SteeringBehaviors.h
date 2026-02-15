@@ -45,3 +45,15 @@ public:
 
 	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
 };
+
+class Arrive : public ISteeringBehavior
+{
+	public:
+	Arrive() = default;
+	virtual ~Arrive() override = default;
+
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
+
+private:
+	float OriginalSpeed = -1;
+};
