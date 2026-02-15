@@ -48,7 +48,7 @@ public:
 
 class Arrive : public ISteeringBehavior
 {
-	public:
+public:
 	Arrive() = default;
 	virtual ~Arrive() override = default;
 
@@ -60,7 +60,7 @@ private:
 
 class Face : public ISteeringBehavior
 {
-	public:
+public:
 	Face() = default;
 	virtual ~Face() override = default;
 
@@ -69,9 +69,18 @@ class Face : public ISteeringBehavior
 
 class Pursuit : public ISteeringBehavior
 {
-	public:
+public:
 	Pursuit() = default;
 	virtual ~Pursuit() override = default;
+
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
+};
+
+class Evade : public ISteeringBehavior
+{
+public:
+	Evade() = default;
+	virtual ~Evade() override = default;
 
 	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
 };
