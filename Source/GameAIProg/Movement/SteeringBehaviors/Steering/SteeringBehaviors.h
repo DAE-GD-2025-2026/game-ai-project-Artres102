@@ -84,3 +84,19 @@ public:
 
 	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
 };
+
+class Wander : public ISteeringBehavior
+{
+public:
+	Wander() = default;
+	virtual ~Wander() override = default;
+
+	virtual SteeringOutput CalculateSteering(float DeltaT, ASteeringAgent & Agent) override;
+
+private:
+	float WanderRadius = 100.f;
+	float WanderDistance = 200.f;
+	float WanderJitter = 30.f;
+
+	float WanderAngle = 0.f;
+};
