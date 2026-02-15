@@ -180,6 +180,25 @@ SteeringOutput Pursuit::CalculateSteering(float DeltaT, ASteeringAgent& Agent)
 	
 
 	Steering.LinearVelocity = DirectionToFuture;
+
+	// Debug Rendering
+	if (Agent.GetDebugRenderingEnabled())
+	{
+		FVector AgentPosition = FVector(Agent.GetPosition().X, Agent.GetPosition().Y, 0);
+		FVector TargetPosition = FVector(Target.Position.X, Target.Position.Y, 0);
+		FVector LineToFuture = AgentPosition + FVector(DirectionToFuture.X, DirectionToFuture.Y, 0);
+
+		// Draw Line to future target position
+		DrawDebugLine(Agent.GetWorld(), AgentPosition, LineToFuture, FColor::Green, false, -1.f);
+
+		FVector AgentVelocity = Agent.GetVelocity();
+		AgentVelocity.Normalize();
+		FVector CurrentDirection = AgentPosition + AgentVelocity * 100.f;
+		// Draw the current direction
+		DrawDebugLine(Agent.GetWorld(), AgentPosition, CurrentDirection, FColor::Cyan, false, -1.f, 0, 3.f);
+		
+		DrawDebugPoint(Agent.GetWorld(), TargetPosition, 10.f, FColor::Red, false, -1.f);
+	}
 	
 	return Steering;
 }
