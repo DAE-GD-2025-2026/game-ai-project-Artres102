@@ -17,6 +17,12 @@ Flock::Flock(
 	Agents.SetNum(FlockSize);
 
  // TODO: initialize the flock and the memory pool
+	for (int i = 0; i < FlockSize; i++)
+	{
+		ASteeringAgent* Agent = pWorld->SpawnActor<ASteeringAgent>(AgentClass);
+
+		Agents.Push(Agent);
+	}
 }
 
 Flock::~Flock()
